@@ -1,42 +1,42 @@
 const usuarioDao = require('../repositorio/usuario_dao');
+const UsuarioService = require('../service/UsuarioService');
 const conexao = require('../util/conexao');
 const Usuario = require('../model/usuario')
+const Autorizacao = require('../model/Autorizacao');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 class UsuarioController {
 
-    login = (req, res, next) => {
+    login = async (req, res, next) => {
         
         const {usuario, senha} = req.body;
 
-        new usuarioDao(conexao)
-        .getByUsuario(usuario)
-        .then(
-            usr => {
+        const user = await new UsuarioService().logar(usuario, senha);
 
-                if(usr.length===0){
-                    return res.status(403).send({
-                        auth: false, "acess-token": null, reason: "Usuário não encontrado!!!"
-                    })
-                }
+        try{
 
-                const passwordIsValid = bcrypt.compareSync(senha, usr[0].senha);
-
-                if(!passwordIsValid){
-                    return res.status(401).send({
-                        auth: false, "acess-token": null, reason: "Senha inválida!!!"
-                    })
-                }else{
-
-                    return res.status(200).send({
-                        auth: true, "acess-token": null, reason: "Logado!!!"
-                    })
-                }
-                
+            if(user.length===0){
+                return res.status(403).send({
+                    auth: false, "access-token": null, reason: "Usuário não encontrado!!!"
+                })
             }
-        )
-        .catch(next);
 
+            const token = jwt.sign({ user: user.usuario}, 'eu-inventei-isso', {
+                expiresIn: 86400 //expira em 24 horas
+            });
+
+            res
+                .status(200)
+                .header({'access-token': token})
+                .json({
+                    autenticado: true,
+                    'access-token': token
+                });
+
+        }catch(err){
+            res.status(500).send(`Erro encontrado ===> ${err}`)
+        }        
     }
 
 
@@ -58,12 +58,16 @@ class UsuarioController {
 
     cadastro = (req, res, next) => {
 
-        const {usuario, senha} = req.body;
+        const {usuario, senha, perfil } = req.body;
 
         const usr = new Usuario(usuario, bcrypt.hashSync(senha, 8));
 
-        new usuarioDao(conexao)
-        .cadastrar(usr)
+        const autorizacao = new Autorizacao(usuario, perfil);
+
+        //new usuarioDao(conexao)
+        new UsuarioService()
+        //.cadastrar(usr)
+        .cadastrarUsuarioPerfil(usr, autorizacao)
         .then(
             resultado => {
                 if(resultado.length === 0) 

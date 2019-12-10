@@ -4,6 +4,8 @@ class ProdutoDao {
         this.conexao = conexao;
     }
 
+    
+
     todos() {
         const p = new Promise( (resolve, reject) => {
             
@@ -32,24 +34,39 @@ class ProdutoDao {
         });
         return p;
     }
-    
-    pagin(){
-        const p1 = new Promise( (resolve, reject) => {
-            var limit = 10;
 
-            this.conexao.query('SELECT * FROM produtos ORDER BY ID ASC LIMIT ' + limit, (err, p1) => {
+    todosPaginando(offset, limit) {
+        const p = new Promise( (resolve, reject) => {
+            
+            this.conexao.query('SELECT * FROM produtos LIMIT ? OFFSET ?',[limit, offset], (err, p) => {
                 if(err) return reject(err);
 
-                console.log(p1);
-
-                resolve(p1);
-
+                console.log(p);
+                
+                resolve(p);
             });
         });
-        
-        return p1;
 
+        return p;
     }
+    
+    // pagin(){
+    //     const p1 = new Promise( (resolve, reject) => {
+    //         var limit = 10;
+
+    //         this.conexao.query('SELECT * FROM produtos ORDER BY ID ASC LIMIT ' + limit, (err, p1) => {
+    //             if(err) return reject(err);
+
+    //             console.log(p1);
+
+    //             resolve(p1);
+
+    //         });
+    //     });
+        
+    //     return p1;
+
+    // }
 
     cadastrar(produto) {
 

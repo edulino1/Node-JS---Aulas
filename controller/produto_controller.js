@@ -18,45 +18,62 @@ class ProdutoController {
         ).catch(next);
     }
 
-    paginas = (req, res) => {
+    paginas = (req, res, next) => {
+
+        var numPorPg = parseInt(req.query.numPorPg) || 10;
+        var pagina = parseInt(req.query.pagina) || 1;
 
         new produtoDao(conexao)
 
         .pagi()
         .then(function(resultado) {
-            var numRows;
-            var numPorPg = parseInt(req.query.npp, 10) || 1;
-            var pagina = parseInt(req.query.page, 10) || 0;
-            var numPgs;
-            var limit = 10;
-            numRows = resultado[0].numRows;
-            numPgs = Math.ceil(numRows / numPorPg);
-            console.log('Quantidade de itens: ', numPgs);
-        })
-        .then(() => pagin())
-        .then(function(resultado) {
-            var responsePayLoad = {
-                resultado: resultado
-            };
-            if (pagina < numPgs) {
-                responsePayLoad.pagination = {
-                    atual: pagina,
-                    porPagina: numPorPg,
-                    anterior: pagina > 0 ? pagina - 1 : undefined,
-                    proxima: pagina < numPgs - 1 ? pagina + 1 : undefined
+            // var limit = 10;
+            var numRows = resultado[0].numRows;
+            var numPgs = Math.ceil(numRows / numPorPg);
+            var offset = numPorPg * (pagina -1);
+            console.log('Quantidade de paginas: ', numPgs);
+
+            new produtoDao(conexao)
+            .todosPaginando(offset, numPorPg)
+            .then( resultado => {
+
+                var response = {
+                    result: resultado
+                };
+
+                if (numPgs > 1) {
+                    response.pagination = {
+                        pagina: pagina,
+                        limite: numPorPg,
+                        total: numRows,
+                        paginas: numPgs,
+                        anterior: pagina > 1 ? pagina -1 : undefined,
+                        proxima: pagina < numPgs ? pagina +1 : undefined
+                    }
                 }
-            }
-            else responsePayLoad.pagination = {
-                err: 'Páginas consultadas ' + pagina + 'é >= que o máximo de páginas '+numPgs
-            }
-            res.json(responsePayLoad);
-        })
-        .catch(function(err) {
-            console.error(err);
-            res.json({ err: err });
-        });
+
+                res.json(response);
+
+            }).catch(next)
+
+        }).catch(next)
+        //     {
+        //     var responsePayLoad = {
+        //         resultado: resultado
+        //     };
+            
+        //     else responsePayLoad.pagination = {
+        //         err: 'Páginas consultadas ' + pagina + 'é >= que o máximo de páginas '+numPgs
+        //     }
+            
+        // })
+        // .catch(function(err) {
+        //     console.error(err);
+        //     res.json({ err: err });
+        // });
     }
 
+    
     cadastro = (req, res, next) => {
 
         const {produto, descricao, preco} = req.body;

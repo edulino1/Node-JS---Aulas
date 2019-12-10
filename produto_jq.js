@@ -44,23 +44,67 @@ $(document).ready(function (){
     })
 })
 
-function exibeProdutos() {
+function exibeProdutos(numPgs=1) {
     $.ajax({
-        url: "http://localhost:3000/api/v1/produto/todos",
+        url: "http://localhost:3000/api/v1/produto/paginas",
         method: "GET",
         dataType: "json",
+        params: {
+            paginas: numPgs
+        },
         success: function(data) {
             console.log(data)
             var taBody = $('#tblProduto tbody');
             taBody.empty();
-            $(data).each(function (index, element) {
+            $(data.result).each(function (index, element) {
                 taBody.append('<tr><td>'+element.id+'</td><td>'+element.produto+'</td><td>'+element.descricao+'</td><td>'+element.preco+'</td><td><button class="btn btn-primary" onclick = "alterar('+element.id+')">Alterar</button></td><td><button class="btn btn-danger" onclick = "deleteProd('+element.id+')">Excluir</button></td></tr>');
             })
+            criarPagina(data.pagination.paginas);
         },
         error: function (error) {
             alert(error);
         }
     })
+}
+
+criarPagina = numPgs => {
+    const paging = document.getElementById("paging");
+
+    for(let i=1; i<=numPgs; i++){
+        let a = document.createElement('a');
+        a.addEventListener('click', () => alert(i));
+        a.textContent = i;
+        a.id=`p${i}`;
+        paging.appendChild(a);
+    }
+}
+
+const novaPagina = numPgs => {
+    
+    // $.ajax({
+    //     url: "http://localhost:3000/api/v1/produto/paginas",
+    //     method: "GET",
+    //     dataType: "json",
+    //     success: function(data) {
+    //         //resposta = exibeProdutos(numPgs);
+    //         if(data.result!=null && data.result.length>0){
+    //             data = data.result;
+    //             //console.log(resposta);
+    //             exibeProdutos();
+    //         }
+    //     }
+    // })
+
+
+    let produtoService = new produtoService;
+    let resposta = exibeProdutos(numPgs);
+
+    if(resposta.data.result!=null && resposta.data.result.length>0){
+        data = resposta.data.result;
+        console.log(resposta);
+        exibeProdutos();
+
+    }
 }
 
 function deleteProd(id){
